@@ -5,27 +5,39 @@ import { TURNS } from './constants.js'
 import { checkWinner, checkEndGame } from './logic/board'
 import { WinnerModal } from './components/WinnerModal.jsx'
 import confetti from 'canvas-confetti'
+import { saveGameStorage, resetGameStorage } from './logic/storage/index.js'
 
 function App() {
 
-  const [board, setBoard] = useState(
-    Array(9).fill(null)
-  )
+  const [board, setBoard] = useState(() => {
 
-  const [turn, setTurn] = useState(TURNS.X)
+    const boardFromStorage = window.localStorage.getItem('board')
+    return boardFromStorage
+      ? JSON.parse(boardFromStorage)
+      : Array(9).fill(null)
+  })
+
+
+  const [turn, setTurn] = useState(() => {
+    const turnFromStorage = window.localStorage.getItem('turn')
+    return turnFromStorage ?? TURNS.X
+  })
 
   //null significa que no hay ganador, false empate
-  const [winner, setWinner] = useState(null) 
+  const [winner, setWinner] = useState(null)
 
   const resetGame = () => {
     setBoard(Array(9).fill(null))
     setTurn(TURNS.X)
     setWinner(null)
+    
+    //Se borran los datos almacenados
+    resetGameStorage()
   }
 
   const updateBoard = (index) => {
     //no actualizamos esta posición si ya tiene algo
-    if (board[index] || winner) return
+    if (board[index] || winner || checkWinner(board)) return
 
     //actualizar el tablero
     const newBoard = [...board]
@@ -36,12 +48,18 @@ function App() {
     const newTurn = turn === TURNS.X ? TURNS.O : TURNS.X
     setTurn(newTurn)
 
+    //Guardar aquí partida
+    saveGameStorage({
+      board: newBoard,
+      turn: newTurn,
+    })
+    
     //Revisar si hay ya ganador
     const newWinner = checkWinner(newBoard)
-    if (newWinner) { 
+    if (newWinner) {
       setWinner(newWinner)
       confetti()
-    } else if(checkEndGame(newBoard)) { //TODO: Check if game is over
+    } else if (checkEndGame(newBoard)) { //TODO: Check if game is over
       setWinner(false) //empate
     }
   }
@@ -74,7 +92,7 @@ function App() {
         </Square>
       </section>
 
-      <WinnerModal winner={winner} resetGame={resetGame}/>
+      <WinnerModal winner={winner} resetGame={resetGame} />
     </main>
   )
 }
