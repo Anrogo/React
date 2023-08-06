@@ -24,9 +24,10 @@ const FollowMouse = () => {
     }
   }, [enabled])
 
+  // change body classname
   useEffect(() => {
     document.body.classList.toggle('no-cursor', enabled)
-    return () => {
+    return () => { //cuando se limpie el efecto
       document.body.classList.remove('no-cursor')
     }
   }, [enabled])
